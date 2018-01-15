@@ -11,12 +11,26 @@ import (
 
 const (
 	CONFIG_PATH string = `C:\goplace\src\elk_conn\conf.ini`
+	TEST_ROAD   string = "test_parent/test_child/"
 )
 
+var set = new(struct {
+	Elk_addres string
+})
+
 func main() {
-	set := new(struct {
-		Elk_addres string
-	})
+
+	toml.DecodeFile(CONFIG_PATH, &set)
+	elk_get_test()
+}
+
+func elk_get_test() {
+	elk_conn := elk.NewElk(set.Elk_addres)
+	elk_conn.Get_data(TEST_ROAD, "_id:AWDqn0Lv62WqGwI2oVMS")
+	fmt.Printf("%v\r\n", string(elk_conn.Answer_bytes))
+}
+
+func elk_put_test() {
 	test_data := struct {
 		User    string    `json:"user"`
 		Init_id int       `json:"init_id"`
@@ -24,9 +38,8 @@ func main() {
 		Time    time.Time `json:"time"`
 	}{User: "Test_user", Init_id: 125, Is_set: false, Time: time.Now()}
 	fmt.Printf("%v123\r\n", test_data)
-	test_road := "test_parent/test_child/"
-	toml.DecodeFile(CONFIG_PATH, &set)
+
 	elk_conn := elk.NewElk(set.Elk_addres)
-	elk_conn.Put_data(test_data, test_road, -1)
+	elk_conn.Put_data(test_data, TEST_ROAD, -1)
 	fmt.Printf("%v\r\n", string(elk_conn.Answer_bytes))
 }
