@@ -2,7 +2,7 @@ package elk
 
 import (
 	"bytes"
-	"encoding/json"
+
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -33,8 +33,8 @@ func (e *Elk) Get_main_info() {
 	e.update_resp(resp.Body)
 }
 
-//data - struct, converted to json, and send as http Body; road - string, path to put data; record_id - id of record, send -1 if need add next record
-func (e *Elk) Put_data(data interface{}, road string, record_id int) {
+//body - []byte convert to httpBody; road - string, path to put data; record_id - id of record, send -1 if need add next record
+func (e *Elk) Put_data(body []byte, road string, record_id int) {
 	//ToDo convert record_id to string
 	var method string
 	var url string
@@ -45,7 +45,7 @@ func (e *Elk) Put_data(data interface{}, road string, record_id int) {
 		url = e.elk_addres + `/` + road
 		method = METHOD_POST
 	}
-	body, _ := json.Marshal(data)
+	//	body, _ := json.Marshal(data)
 	fmt.Println(url)
 	req, _ := http.NewRequest(method, url, bytes.NewReader(body))
 	resp, _ := e.http_client.Do(req)
@@ -53,6 +53,7 @@ func (e *Elk) Put_data(data interface{}, road string, record_id int) {
 }
 
 func (e *Elk) update_resp(body io.Reader) {
+
 	e.Answer_bytes, _ = ioutil.ReadAll(body)
 }
 
@@ -61,7 +62,9 @@ func (e *Elk) Get_data(road string, query string) {
 		url := fmt.Sprintf(GET_DATA_URL_PTRN, e.elk_addres, road, query)
 		resp, _ := e.http_client.Get(url)
 		e.update_resp(resp.Body)
-
+		//		t := new(interface{})
+		//		json.Unmarshal(e.Answer_bytes, t)
+		//		fmt.Println(t)
 	}
 
 }
