@@ -3,6 +3,7 @@ package main
 
 import (
 	"elk_conn/elk"
+	"elk_conn/rest_db_conn"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -22,13 +23,47 @@ const (
 )
 
 var set = new(struct {
-	Elk_addres string
+	Elk_addres    string
+	Db_host       string
+	Db_port       int
+	Db_user       string
+	Db_pwd        string
+	Db_name       string
+	T_user        string
+	T_pwd         string
+	T_local_ip    string
+	T_local_port  int
+	T_server_ip   string
+	T_server_port int
+	T_remote_ip   string
+	T_remote_port int
+	Test_sql      string
 })
 
 func main() {
-
 	toml.DecodeFile(CONFIG_PATH, &set)
-	elk_get_test()
+	db_test()
+}
+
+func db_test() {
+	var id int
+	var crd time.Time
+	var mod time.Time
+	var list int
+	var name string
+	fmt.Println(set.Elk_addres)
+	conn := rest_db_conn.Init(set.T_user, set.T_pwd, &rest_db_conn.Endpoint{Host: set.T_local_ip, Port: set.T_local_port}, &rest_db_conn.Endpoint{Host: set.T_server_ip, Port: set.T_server_port}, &rest_db_conn.Endpoint{Host: set.T_remote_ip, Port: set.T_remote_port}, set.Db_host, set.Db_port, set.Db_user, set.Db_pwd, set.Db_name)
+
+	rows, err := conn.Query(set.Test_sql)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	for rows.Next() {
+		rows.Scan(&id, &crd, &mod, &name, &list)
+
+		fmt.Println(id, "-", crd, "-", mod, "-", name, "-", list)
+	}
 }
 
 func elk_get_test() {
