@@ -56,6 +56,12 @@ func (e *Elk) update_resp(body io.Reader) {
 	e.Answer_bytes, _ = ioutil.ReadAll(body)
 }
 
+func (e *Elk) Delete(path string) {
+
+	req, _ := http.NewRequest("DELETE", path, nil)
+	e.http_client.Do(req)
+}
+
 func (e *Elk) Get_data(road string, query string) {
 	if query != "" {
 		url := fmt.Sprintf(GET_DATA_URL_PTRN, e.elk_addres, road, query)

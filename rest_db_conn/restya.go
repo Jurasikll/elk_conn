@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net"
+
+	tomb "gopkg.in/tomb.v2"
 	//	"os"
 
 	//	re "temp_change_encode/restya_entities"
@@ -36,14 +38,14 @@ func Init(remote_tunn_user string, remote_tunn_pwd string, local *Endpoint, serv
 	}
 
 	tunn := &SSHtunnel{
-		Config:  sshConfig,
-		Local:   local,
-		Server:  server,
-		Remote:  remote,
-		is_work: true,
+		Config: sshConfig,
+		Local:  local,
+		Server: server,
+		Remote: remote,
 	}
 	res := &Rest_conn{db, tunn}
-	go res.tunn.Start()
+	res.tunn.t.Go(res.tunn.Start)
+	//	go res.tunn.Start()
 	return res
 }
 
@@ -57,36 +59,41 @@ func (endpoint *Endpoint) String() string {
 }
 
 type SSHtunnel struct {
-	Local   *Endpoint
-	Server  *Endpoint
-	Remote  *Endpoint
-	is_work bool
+	Local  *Endpoint
+	Server *Endpoint
+	Remote *Endpoint
+	t      tomb.Tomb
 
 	Config *ssh.ClientConfig
 }
 
 func (tunnel *SSHtunnel) Start() error {
 	i := 1
-	p := 1000
+	//	p := 1000
 	listener, err := net.Listen("tcp", tunnel.Local.String())
 	if err != nil {
 		return err
 	}
 	defer listener.Close()
 
-	for tunnel.is_work {
+	for {
+		fmt.Printf("%d\r\n", i)
 		conn, err := listener.Accept()
 		if err != nil {
 			return err
 		}
-
-		if i == p {
-			fmt.Printf("%d\r\n", i)
-			p = p * 2
+		tunnel.forward(conn)
+		select {
+		case <-tunnel.t.Dying():
+			fmt.Println("End goroutine")
+			return nil
 		}
+
 		i = i + 1
-		go tunnel.forward(conn)
+
+		fmt.Println("ASFDSGFWEOPKFW")
 	}
+
 	return nil
 }
 
@@ -114,7 +121,9 @@ func (tunnel *SSHtunnel) forward(localConn net.Conn) {
 	go copyConn(remoteConn, localConn)
 }
 
-func (rc *Rest_conn) close_rc() {
-	rc.tunn.is_work = false
+func (rc *Rest_conn) Close_rc() error {
+	fmt.Println("close")
 	rc.Close()
+	rc.tunn.t.Kill(nil)
+	return rc.tunn.t.Wait()
 }
